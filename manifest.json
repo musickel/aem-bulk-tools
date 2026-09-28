@@ -1,0 +1,48 @@
+{
+  "manifest_version": 3,
+  "name": "AEM Bulk Tools",
+  "version": "1.7.0",
+  "description": "Bulk create/update CFs, move assets, build packages, and publish AEM paths with Chrome User & AEM Session logging.",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "webRequest",
+    "declarativeNetRequest",
+    "declarativeNetRequestWithHostAccess",
+    "scripting",
+    "tabs",
+    "cookies",
+    "downloads",
+    "identity",
+    "identity.email"
+  ],
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Open AEM Bulk Tools",
+    "default_icon": {
+      "16": "aem-icon.png",
+      "32": "aem-icon.png",
+      "48": "aem-icon.png",
+      "128": "aem-icon.png"
+    }
+  },
+  "icons": {
+    "16": "aem-icon.png",
+    "32": "aem-icon.png",
+    "48": "aem-icon.png",
+    "128": "aem-icon.png"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["xlsx.full.min.js"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

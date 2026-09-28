@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en" class="guide-mode">
+<head>
+  <meta charset="utf-8">
+  <title>AEM Bulk Tools - User Guide</title>
+  <script>
+    chrome.storage.local.get("ui_theme", (data) => {
+      document.documentElement.setAttribute("data-theme", data.ui_theme || "dark");
+    });
+  </script>
+  <link rel="stylesheet" href="common.css">
+</head>
+<body>
+  <div class="guide-container">
+    <div class="guide-header">
+      <h1>AEM Bulk Tools — User Guide & Documentation</h1>
+      <span class="code-pill">v1.7.0</span>
+    </div>
+
+    <!-- PROFILE MANAGEMENT -->
+    <div class="module-card">
+      <h3>⚙️ Profile & Authentication</h3>
+      <p>Configure target AEM author environments using supported authentication methods:</p>
+      <ol class="step-list">
+        <li><strong>Cookie Session:</strong> Uses active cookies from an open tab in your target host.</li>
+        <li><strong>Auto IMS Bearer Token:</strong> Intercepts active IMS tokens automatically on AEM Cloud Service instances.</li>
+        <li><strong>Basic Auth / Static Token:</strong> Store credentials or static Bearer tokens encrypted locally.</li>
+      </ol>
+      <div class="note-box">
+        <strong>Encrypted Backup:</strong> Use the <strong>Backup</strong> tab to export/restore AES-256 encrypted configuration bundles.
+      </div>
+    </div>
+
+    <!-- CF MANAGER -->
+    <div class="module-card">
+      <h3>📄 Content Fragment Manager</h3>
+      <p>Bulk import/upsert Content Fragments from CSV/XLSX or extract existing fragments to JSON.</p>
+      <ol class="step-list">
+        <li>Ensure spreadsheet contains required columns: <span class="code-pill">path</span>, <span class="code-pill">name</span>, <span class="code-pill">title</span>, <span class="code-pill">model</span>. Remaining columns represent fragment element fields.</li>
+        <li>Set a delay between rows to regulate processing speed.</li>
+      </ol>
+    </div>
+
+    <!-- ASSET MOVER -->
+    <div class="module-card">
+      <h3>🚚 Asset Mover & Renamer</h3>
+      <p>Batch move or rename assets in the JCR tree.</p>
+      <ol class="step-list">
+        <li>Upload a CSV/XLSX file with Column A as the current path and Column B as the target destination path.</li>
+        <li>Source and target file extensions must match.</li>
+      </ol>
+    </div>
+
+    <!-- PACKAGE BUILDER -->
+    <div class="module-card">
+      <h3>📦 Package Builder</h3>
+      <p>Build CRX packages with optional size-based package splitting.</p>
+      <ol class="step-list">
+        <li>Provide target JCR paths in <strong>Include Paths</strong>.</li>
+        <li>Enable <strong>Split Package by Size Limit</strong> to automatically partition assets under a specified MB cap.</li>
+      </ol>
+      <div class="note-box">
+        Missing paths (HTTP 404) are automatically flagged in red in the console and excluded from package definitions.
+      </div>
+    </div>
+
+    <!-- PUBLISHER -->
+    <div class="module-card">
+      <h3>🚀 Bulk Publisher</h3>
+      <p>Activate or Deactivate pages and assets across AEM instances.</p>
+      <ol class="step-list">
+        <li>Select <strong>Activate</strong> or <strong>Deactivate</strong>.</li>
+        <li>Input paths manually or upload a spreadsheet.</li>
+        <li>Enable <strong>Include Children</strong> to trigger tree activation.</li>
+      </ol>
+    </div>
+
+    <!-- AUDIT LOGGING -->
+    <div class="module-card">
+      <h3>📊 Remote Google Sheet Audit Logging</h3>
+      <p>Every execution run automatically posts an audit log entry to your Google Spreadsheet:</p>
+      <ul>
+        <li><strong>Column A:</strong> Authenticated Google Chrome Email, AEM Session ID, and External IP address.</li>
+        <li><strong>Column B:</strong> Full console execution log summary.</li>
+      </ul>
+    </div>
+  </div>
+</body>
+</html>

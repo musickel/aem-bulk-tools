@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>AEM Bulk Tools</title>
+  <script>
+    if (window.innerWidth > 600 || window.location.search.includes("mode=tab")) {
+      document.documentElement.classList.add("full-tab-mode");
+    }
+  </script>
+  <link rel="stylesheet" href="common.css">
+</head>
+<body>
+  <div class="app-wrapper">
+    <div class="header">
+      <h2>AEM Bulk Tools</h2>
+      <div class="header-controls">
+        <label class="theme-switch" title="Toggle Light / Dark Theme">
+          <input type="checkbox" id="chkToggleTheme">
+          <span class="slider"></span>
+        </label>
+        <button id="btnOpenGuide" class="btn-tab-link">📖 User Guide</button>
+        <button id="btnOpenFullTab" class="btn-tab-link">Open Full Tab</button>
+        <span id="autoTokenStatus">🔵 Session Mode Ready</span>
+      </div>
+    </div>
+
+    <div class="nav-tabs">
+      <button class="tab-btn active" data-tab="tabCF">CF Manager</button>
+      <button class="tab-btn" data-tab="tabPageProps">Page Properties</button>
+      <button class="tab-btn" data-tab="tabMover">Asset Mover</button>
+      <button class="tab-btn" data-tab="tabPackage">Package Builder</button>
+      <button class="tab-btn" data-tab="tabPublisher">Publisher</button>
+      <button class="tab-btn" data-tab="tabProfiles">Profiles</button>
+      <button class="tab-btn" data-tab="tabBackup">Backup</button>
+    </div>
+
+    <!-- SHARED PROFILE SELECTOR -->
+    <div style="padding: 12px 16px 0 16px;">
+      <div class="form-group">
+        <label for="selProfile">Active Target Profile</label>
+        <select id="selProfile"></select>
+      </div>
+    </div>
+
+    <!-- MODULE TAB 1: CONTENT FRAGMENT MANAGER -->
+    <div id="tabCF" class="tab-content active">
+      <div class="form-group">
+        <label for="selCFOperation">CF Operation</label>
+        <select id="selCFOperation">
+          <option value="IMPORT">Import / Upsert Content Fragments (CSV/XLSX)</option>
+          <option value="EXPORT">Extract Content Fragments to CSV</option>
+        </select>
+      </div>
+
+      <div id="sectionCFImport">
+        <div class="form-group">
+          <label for="fileCFData">Upload CSV / XLSX File</label>
+          <input type="file" id="fileCFData" accept=".csv, .xlsx, .xls" />
+        </div>
+      </div>
+
+      <div id="sectionCFExport" style="display: none;">
+        <div class="form-group">
+          <label for="txtExtractPath">AEM DAM Path to Extract</label>
+          <input type="text" id="txtExtractPath" placeholder="/content/dam/my-folder" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="numCFDelay">Batch Delay (Seconds per row)</label>
+        <input type="number" id="numCFDelay" value="0.2" step="0.1" min="0" />
+      </div>
+
+      <button id="btnRunCF" class="btn">Run CF Operation</button>
+    </div>
+
+    <!-- MODULE TAB 2: PAGE PROPERTIES MANAGER -->
+    <div id="tabPageProps" class="tab-content">
+      <div class="form-group">
+        <label for="filePagePropsData">Upload CSV / XLSX (Col A: path, Remaining Cols: JCR Page Properties)</label>
+        <input type="file" id="filePagePropsData" accept=".csv, .xlsx, .xls" />
+      </div>
+
+      <div class="form-group">
+        <label for="numPagePropsDelay">Batch Delay (Seconds per row)</label>
+        <input type="number" id="numPagePropsDelay" value="0.2" step="0.1" min="0" />
+      </div>
+
+      <button id="btnRunPageProps" class="btn">Update Page Properties</button>
+    </div>
+
+    <!-- MODULE TAB 3: ASSET MOVER & RENAME -->
+    <div id="tabMover" class="tab-content">
+      <div class="form-group">
+        <label for="fileMoveData">Upload CSV / XLSX (Col A: Current Path, Col B: Target Path)</label>
+        <input type="file" id="fileMoveData" accept=".csv, .xlsx, .xls" />
+      </div>
+
+      <div class="form-group">
+        <label for="numMoveDelay">Batch Delay (Seconds per row)</label>
+        <input type="number" id="numMoveDelay" value="0.2" step="0.1" min="0" />
+      </div>
+
+      <button id="btnRunMove" class="btn">Start Asset Move Process</button>
+    </div>
+
+    <!-- MODULE TAB 4: PACKAGE BUILDER -->
+    <div id="tabPackage" class="tab-content">
+      <div class="form-group">
+        <label for="txtPkgGroupName">Package Group Name</label>
+        <input type="text" id="txtPkgGroupName" value="my-bulk-exports" placeholder="my-bulk-exports" />
+      </div>
+      <div class="form-group">
+        <label for="txtPkgName">Package Base Name</label>
+        <input type="text" id="txtPkgName" value="aem-assets-package" placeholder="aem-assets-package" />
+      </div>
+      <div class="form-group">
+        <label for="txtPkgIncludePaths">Include Paths (One path per line)</label>
+        <textarea id="txtPkgIncludePaths" placeholder="/content/dam/site-a&#10;/content/dam/site-b/image.png&#10;/conf/my-app"></textarea>
+      </div>
+      <div class="form-group">
+        <label for="txtPkgExcludePaths">Exclude Path Substrings (One per line)</label>
+        <textarea id="txtPkgExcludePaths" placeholder="/renditions/&#10;/jcr:content/sub-node"></textarea>
+      </div>
+
+      <label class="checkbox-group">
+        <input type="checkbox" id="chkEnableSplit" />
+        Split Package by Size Limit
+      </label>
+
+      <div class="form-group" id="groupMaxMb" style="opacity: 0.5;">
+        <label for="numPkgMaxMbLimit">Max Zip File Size Per Package (in Megabytes - MB)</label>
+        <input type="number" id="numPkgMaxMbLimit" value="2" min="1" step="1" disabled placeholder="e.g. 2 (for 2 MB max per zip)" />
+      </div>
+
+      <label class="checkbox-group">
+        <input type="checkbox" id="chkDownloadPkg" checked />
+        Download Package (.ZIP) after build
+      </label>
+      <label class="checkbox-group">
+        <input type="checkbox" id="chkDeletePkgAfterDownload" />
+        Delete built package node from AEM JCR after download
+      </label>
+
+      <button id="btnRunPackage" class="btn">Build Package(s)</button>
+    </div>
+
+    <!-- MODULE TAB 5: BULK PUBLISHER -->
+    <div id="tabPublisher" class="tab-content">
+      <div class="form-group">
+        <label for="selAction">Replication Action</label>
+        <select id="selAction">
+          <option value="Activate">Activate (Publish Content)</option>
+          <option value="Deactivate">Deactivate (Unpublish Content)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="txtPaths">AEM Paths to Process (One per line)</label>
+        <textarea id="txtPaths" placeholder="/content/dam/site-a/logo.png&#10;/content/mysite/en/about-us"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="filePublishData">OR Upload CSV / XLSX (Col A: Path)</label>
+        <input type="file" id="filePublishData" accept=".csv, .xlsx, .xls" />
+      </div>
+
+      <div class="form-group">
+        <label class="checkbox-group">
+          <input type="checkbox" id="chkEnableExclude" checked />
+          Enable Exclusion Filter
+        </label>
+        <textarea id="txtExclude" placeholder="/drafts/&#10;/secret-child"></textarea>
+      </div>
+
+      <label class="checkbox-group">
+        <input type="checkbox" id="chkIncludeChildren" />
+        Include Child Pages / Assets (Tree Activation)
+      </label>
+
+      <div class="form-group">
+        <label for="numPublishDelay">Batch Delay (Seconds per request)</label>
+        <input type="number" id="numPublishDelay" value="0.2" step="0.1" min="0" />
+      </div>
+
+      <button id="btnRunPublish" class="btn">Execute Replication Process</button>
+    </div>
+
+    <!-- PROFILES TAB -->
+    <div id="tabProfiles" class="tab-content">
+      <div class="form-group">
+        <label for="accEnvName">Profile / Environment Name</label>
+        <input type="text" id="accEnvName" placeholder="e.g. YES Bank Dev, HDFC Prod" />
+      </div>
+      <div class="form-group">
+        <label for="accDomain">Domain URL</label>
+        <input type="text" id="accDomain" placeholder="https://author-domain.com" />
+      </div>
+      <div class="form-group">
+        <label for="accAuthMode">Auth Mode</label>
+        <select id="accAuthMode">
+          <option value="COOKIE_SESSION">Active Browser Cookie Session</option>
+          <option value="AUTO_IMS">Auto-Detect Adobe IMS Bearer Token</option>
+          <option value="STATIC_IMS">Static IMS Token</option>
+          <option value="BASIC">Basic Auth (Username / Password)</option>
+        </select>
+      </div>
+
+      <div id="basicAuthFields" style="display:none;">
+        <div class="form-group"><label for="accUsername">Username</label><input type="text" id="accUsername" /></div>
+        <div class="form-group"><label for="accPassword">Password</label><input type="password" id="accPassword" /></div>
+      </div>
+
+      <div id="staticImsFields" style="display:none;">
+        <div class="form-group"><label for="accStaticToken">IMS Bearer Token</label><input type="password" id="accStaticToken" /></div>
+      </div>
+
+      <button id="btnSaveAccount" class="btn">Save Profile</button>
+      <hr style="margin: 16px 0; border: none; border-top: 1px solid var(--spectrum-border);" />
+      <div class="form-group">
+        <label for="selDeleteProfile">Delete Saved Profile</label>
+        <select id="selDeleteProfile"></select>
+      </div>
+      <button id="btnDeleteAccount" class="btn btn-danger">Delete Selected Profile</button>
+    </div>
+
+    <!-- BACKUP TAB -->
+    <div id="tabBackup" class="tab-content">
+      <p style="font-size: 12px; color: var(--spectrum-text-secondary);">Export or import encrypted backup bundles of all saved profiles.</p>
+      <button id="btnBackup" class="btn">Export Encrypted Backup Bundle</button>
+      <button id="btnRestore" class="btn btn-secondary" style="margin-top: 8px;">Restore from Encrypted Backup</button>
+      <input type="file" id="fileRestore" accept=".aemback" style="display: none;" />
+    </div>
+
+    <!-- SHARED CONSOLE & PROGRESS -->
+    <div style="padding: 0 16px 16px 16px;">
+      <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
+      <div id="consoleLog">Ready. Select profile and operation tab to begin.</div>
+      <div class="log-actions">
+        <button id="btnClearLog" class="btn btn-secondary btn-small">Clear Log</button>
+        <button id="btnExportLog" class="btn btn-secondary btn-small">Export .TXT Log</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+  <script src="cf-manager.js"></script>
+  <script src="page-properties.js"></script>
+  <script src="asset-mover.js"></script>
+  <script src="package-builder.js"></script>
+  <script src="publisher.js"></script>
+</body>
+</html>

@@ -1,0 +1,101 @@
+document.addEventListener("DOMContentLoaded", () => {
+  const fileMoveData = document.getElementById("fileMoveData");
+  const numMoveDelay = document.getElementById("numMoveDelay");
+  const btnRunMove = document.getElementById("btnRunMove");
+
+  btnRunMove.addEventListener("click", async () => {
+    const profile = window.AEMApp.getSelectedProfile();
+    if (!profile) return alert("Select a valid profile first.");
+
+    const file = fileMoveData.files[0];
+    if (!file) return alert("Select a CSV or XLSX file containing move mapping.");
+
+    btnRunMove.disabled = true;
+    const authHeader = await window.AEMApp.getAuthHeader(profile);
+    if (!authHeader) {
+      btnRunMove.disabled = false;
+      return;
+    }
+
+    const connected = await window.AEMApp.verifyConnectivity(profile, authHeader);
+    if (!connected) {
+      btnRunMove.disabled = false;
+      return;
+    }
+
+    const delay = parseFloat(numMoveDelay.value) || 0;
+
+    const executeMoveBatch = async (rows) => {
+      window.AEMApp.log(`--- STARTING BULK ASSET MOVE / RENAME ---`);
+      window.AEMApp.log(`Total Moves To Process: ${rows.length}`);
+
+      let successCount = 0;
+      let failCount = 0;
+
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const sourcePath = row[0];
+        const targetPath = row[1];
+
+        window.AEMApp.setProgress(((i + 1) / rows.length) * 100);
+
+        if (!sourcePath || !targetPath) {
+          window.AEMApp.log(`SKIPPED [${i + 1}/${rows.length}]: Missing source or target path.`);
+          continue;
+        }
+
+        window.AEMApp.log(`[${i + 1}/${rows.length}] Moving '${sourcePath}' -> '${targetPath}'`);
+
+        const res = await new Promise(r => chrome.runtime.sendMessage({
+          action: "MOVE_RENAME_ASSET",
+          payload: {
+            domain: profile.domain,
+            sourcePath,
+            targetPath,
+            authHeader
+          }
+        }, r));
+
+        if (res && res.ok) {
+          successCount++;
+          window.AEMApp.log(`  ✓ SUCCESS: Moved [HTTP ${res.status}]`);
+        } else {
+          failCount++;
+          window.AEMApp.log(`  ❌ FAILED: ${res?.error || 'Move Error'}`);
+        }
+
+        if (delay > 0 && i < rows.length - 1) {
+          await new Promise(r => setTimeout(r, delay * 1000));
+        }
+      }
+
+      window.AEMApp.log(`\nMove Batch Complete: ${successCount} Succeeded, ${failCount} Failed.`);
+      
+      // Dispatch Execution Log directly to Google Sheet
+      window.AEMApp.sendLogToGoogleSheet("Asset Mover", window.AEMApp.getConsoleLogs());
+
+      btnRunMove.disabled = false;
+    };
+
+    const reader = new FileReader();
+    const isExcel = file.name.endsWith(".xlsx") || file.name.endsWith(".xls");
+
+    if (isExcel) {
+      reader.onload = async (e) => {
+        const data = new Uint8Array(e.target.result);
+        const wb = XLSX.read(data, { type: "array" });
+        const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1 });
+        const validRows = rows.filter(r => r[0] && r[1]).map(r => [String(r[0]).trim(), String(r[1]).trim()]);
+        await executeMoveBatch(validRows);
+      };
+      reader.readAsArrayBuffer(file);
+    } else {
+      reader.onload = async (e) => {
+        const lines = e.target.result.split(/\r?\n/);
+        const validRows = lines.map(l => l.split(",").map(c => c.replace(/^"|"$/g, "").trim())).filter(r => r[0] && r[1]);
+        await executeMoveBatch(validRows);
+      };
+      reader.readAsText(file, "utf-8");
+    }
+  });
+});
