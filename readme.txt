@@ -1,6 +1,7 @@
 ================================================================================
                        AEM BULK TOOLS CHROME EXTENSION                       
             Technical Architecture & API Documentation (Manifest V3)
+                                  -musickel
 ================================================================================
 
 1. SYSTEM OVERVIEW & CORE PRINCIPLES
